@@ -38,7 +38,7 @@ boolean commandComplete = false;  // whether the string is complete
 
 void setup()  
 { 
-  gw.begin();
+  gw.begin(RF24_PA_LEVEL_GW, RF24_CHANNEL, RF24_DATARATE, messageCallback);
 }
 
 void loop()  
@@ -51,15 +51,17 @@ void loop()
     commandComplete = false;  
     inputPos = 0;
   }
+  
+  // Arduino Leonardo and Yún don't trigger the serialEvent.  Call it ourselves.
+  serialEvent();
 }
 
+// This will be called when message received
+void messageCallback(char *writeBuffer) {
+  Serial.println(writeBuffer);
+}
 
-/*
-  SerialEvent occurs whenever a new data comes in the
- hardware serial RX.  This routine is run between each
- time loop() runs, so using delay inside loop can delay
- response.  Multiple bytes of data may be available.
- */
+// Check for Serial data
 void serialEvent() {
   while (Serial.available()) {
     // get the new byte:

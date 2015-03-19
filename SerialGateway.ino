@@ -24,6 +24,7 @@
 #include <SPI.h>  
 #include <MySensor.h>  
 #include <MyGateway.h>  
+#include <Console.h>
 #include <stdarg.h>
 
 #define INCLUSION_MODE_TIME 1 // Number of minutes inclusion mode is enabled
@@ -38,6 +39,8 @@ boolean commandComplete = false;  // whether the string is complete
 
 void setup()  
 { 
+  Bridge.begin();
+  Console.begin();
   gw.begin(RF24_PA_LEVEL_GW, RF24_CHANNEL, RF24_DATARATE, messageCallback);
 }
 
@@ -52,13 +55,20 @@ void loop()
     inputPos = 0;
   }
   
-  // Arduino Leonardo and Yún don't trigger the serialEvent.  Call it ourselves.
-  serialEvent();
+  // Allow command input either by Console or Serial -- but not both.
+  if (Console) {
+    consoleEvent();
+  } else {
+    // Arduino Leonardo and Yún don't trigger the serialEvent.  Call it ourselves.
+    serialEvent();
+  }
 }
 
 // This will be called when message received
 void messageCallback(char *writeBuffer) {
-  Serial.println(writeBuffer);
+  if (Console) {
+      Console.print(writeBuffer);
+  }
 }
 
 // Check for Serial data
@@ -84,4 +94,25 @@ void serialEvent() {
   }
 }
 
-
+// Check for Console data
+void consoleEvent() {
+  while (Console.available()) {
+    // get the new byte:
+    char inChar = (char)Console.read(); 
+    // if the incoming character is a newline, set a flag
+    // so the main loop can do something about it:
+    if (inputPos<MAX_RECEIVE_LENGTH-1 && !commandComplete) { 
+      if (inChar == '\n') {
+        inputString[inputPos] = 0;
+        commandComplete = true;
+      } else {
+        // add it to the inputString:
+        inputString[inputPos] = inChar;
+        inputPos++;
+      }
+    } else {
+       // Incoming message too long. Throw away 
+        inputPos = 0;
+    }
+  }
+}

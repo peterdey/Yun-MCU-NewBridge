@@ -37,6 +37,8 @@ char inputString[MAX_RECEIVE_LENGTH] = "";    // A string to hold incoming comma
 int inputPos = 0;
 boolean commandComplete = false;  // whether the string is complete
 
+boolean consoleStatus = 0;
+
 void setup()  
 { 
   Bridge.begin();
@@ -46,7 +48,15 @@ void setup()
 
 void loop()  
 { 
-  gw.processRadioMessage();   
+  // Say Hello to the Console when it connects
+  if (Console.connected() != consoleStatus) {
+    consoleStatus = Console.connected();
+    if (Console.connected()) {
+      Console.println("0;255;3;0;9;Console connected.");
+    } 
+  }
+  
+  gw.processRadioMessage();
   if (commandComplete) {
     // A command wass issued from serial interface
     // We will now try to send it to the actuator
@@ -58,7 +68,7 @@ void loop()
   // Allow command input either by Console or Serial -- but not both.
   if (Console) {
     consoleEvent();
-  } else {
+  } else if (Serial) {
     // Arduino Leonardo and Yún don't trigger the serialEvent.  Call it ourselves.
     serialEvent();
   }

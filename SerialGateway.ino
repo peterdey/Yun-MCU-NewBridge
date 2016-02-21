@@ -24,7 +24,6 @@
 #include <SPI.h>  
 #include <MySensor.h>  
 #include <MyGateway.h>  
-#include <Console.h>
 #include <stdarg.h>
 
 #define INCLUSION_MODE_TIME 1 // Number of minutes inclusion mode is enabled
@@ -38,16 +37,50 @@ int inputPos = 0;
 boolean commandComplete = false;  // whether the string is complete
 
 boolean consoleStatus = 0;
+static const char CTRL_C = 3;
 
 void setup()  
 { 
-  Bridge.begin();
-  Console.begin();
+  bridgeBegin();
   gw.begin(RF24_PA_LEVEL_GW, RF24_CHANNEL, RF24_DATARATE, messageCallback);
+}
+
+void bridgeBegin() {
+  delay(2500); //The bare minimum needed to be able to reboot both linino and leonardo.
+               // if reboot fails try increasing this number
+               // The more you run on linux the higher this number should be
+  Serial1.begin(250000); // Set the baud.
+  // Wait for U-boot to finish startup.  Consume all bytes until we are done.
+  do {
+    while (Serial1.available() > 0) {
+      Serial1.read();
+    }
+    delay(1000);
+  } while (Serial1.available()>0);
+
+  Serial1.write((uint8_t *)"\xff\0\0\x05XXXXX\x0d\xaf", 11);
+  Serial1.print("\n");
+  delay(500);
+  Serial1.write(CTRL_C);
+  Serial1.print("\n");
+  delay(500);
+  Serial1.print("\x03");
+  Serial1.print("\n");
+  delay(500);
+  Serial1.print("\003");
+  Serial1.print("\n");
+  delay(250);
+  Serial1.print("\n");
+  delay(500);
+  Serial1.print("/mnt/sda1/newbridge/newbridge.py -q --spy\n");
+  while (Serial1.available() > 0) {
+    Serial1.read();
+  }
 }
 
 void loop()  
 { 
+  /*
   // Say Hello to the Console when it connects
   if (Console.connected() != consoleStatus) {
     consoleStatus = Console.connected();
@@ -55,6 +88,7 @@ void loop()
       Console.println("0;255;3;0;9;Console connected.");
     } 
   }
+  */
   
   gw.processRadioMessage();
   if (commandComplete) {
@@ -65,10 +99,13 @@ void loop()
     inputPos = 0;
   }
   
+  /*
   // Allow command input either by Console or Serial -- but not both.
   if (Console) {
     consoleEvent();
   } else if (Serial) {
+  */
+  if (Serial1) {
     // Arduino Leonardo and Yún don't trigger the serialEvent.  Call it ourselves.
     serialEvent();
   }
@@ -76,16 +113,19 @@ void loop()
 
 // This will be called when message received
 void messageCallback(char *writeBuffer) {
+  /*
   if (Console) {
       Console.print(writeBuffer);
   }
+  */
+  Serial1.print(writeBuffer);
 }
 
 // Check for Serial data
 void serialEvent() {
-  while (Serial.available()) {
+  while (Serial1.available()) {
     // get the new byte:
-    char inChar = (char)Serial.read(); 
+    char inChar = (char)Serial1.read();
     // if the incoming character is a newline, set a flag
     // so the main loop can do something about it:
     if (inputPos<MAX_RECEIVE_LENGTH-1 && !commandComplete) { 
@@ -104,6 +144,7 @@ void serialEvent() {
   }
 }
 
+/*
 // Check for Console data
 void consoleEvent() {
   while (Console.available()) {
@@ -126,3 +167,4 @@ void consoleEvent() {
     }
   }
 }
+*/

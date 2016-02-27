@@ -58,21 +58,22 @@ void bridgeBegin() {
     delay(1000);
   } while (Serial1.available()>0);
 
+  // Kill the Arduino bridge in case it's running
   Serial1.write((uint8_t *)"\xff\0\0\x05XXXXX\x0d\xaf", 11);
   Serial1.print("\n");
   delay(500);
-  Serial1.write(CTRL_C);
-  Serial1.print("\n");
-  delay(500);
-  Serial1.print("\x03");
-  Serial1.print("\n");
-  delay(500);
-  Serial1.print("\003");
-  Serial1.print("\n");
+  Serial1.print(CTRL_C);
   delay(250);
-  Serial1.print("\n");
-  delay(500);
-  Serial1.print("/mnt/sda1/newbridge/newbridge.py -q --spy\n");
+  Serial1.print(F("\n"));
+  delay(250);
+  Serial1.print(F("\n"));
+  delay(250);
+  while (Serial1.available() > 0) {
+    Serial1.read();
+  }
+  
+  // Start up our own bridge
+  Serial1.print("/mnt/sda1/newbridge/newbridge.py -q -l /mnt/sda1/newbridge/log.log\n");
   while (Serial1.available() > 0) {
     Serial1.read();
   }

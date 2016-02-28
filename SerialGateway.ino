@@ -100,12 +100,6 @@ void loop()
     inputPos = 0;
   }
   
-  /*
-  // Allow command input either by Console or Serial -- but not both.
-  if (Console) {
-    consoleEvent();
-  } else if (Serial) {
-  */
   if (Serial1) {
     // Arduino Leonardo and Yún don't trigger the serialEvent.  Call it ourselves.
     serialEvent();
@@ -114,11 +108,6 @@ void loop()
 
 // This will be called when message received
 void messageCallback(char *writeBuffer) {
-  /*
-  if (Console) {
-      Console.print(writeBuffer);
-  }
-  */
   Serial1.print(writeBuffer);
 }
 
@@ -144,28 +133,3 @@ void serialEvent() {
     }
   }
 }
-
-/*
-// Check for Console data
-void consoleEvent() {
-  while (Console.available()) {
-    // get the new byte:
-    char inChar = (char)Console.read(); 
-    // if the incoming character is a newline, set a flag
-    // so the main loop can do something about it:
-    if (inputPos<MAX_RECEIVE_LENGTH-1 && !commandComplete) { 
-      if (inChar == '\n') {
-        inputString[inputPos] = 0;
-        commandComplete = true;
-      } else {
-        // add it to the inputString:
-        inputString[inputPos] = inChar;
-        inputPos++;
-      }
-    } else {
-       // Incoming message too long. Throw away 
-        inputPos = 0;
-    }
-  }
-}
-*/
